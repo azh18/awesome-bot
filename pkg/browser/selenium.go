@@ -11,22 +11,30 @@ import (
 var (
 	once    sync.Once
 	factory *SeleniumFactory
+
+	// options
+	driverPath string
+	port       int
+
+	needStartDriver = false
 )
 
-const (
-	// chromeDriverPath = "/opt/selenium/chromedriver-86.0.4240.22"
-	port = 4444
-)
+func InitSelenium(chromeDriverPath string, chromeDriverPort int) {
+	driverPath = chromeDriverPath
+	port = chromeDriverPort
+}
 
 type SeleniumService struct {
-	// service   *selenium.Service
+	service   *selenium.Service
 	WebDriver selenium.WebDriver
 	stopCh    chan struct{}
 }
 
 func (s *SeleniumService) Stop() {
 	s.WebDriver.Quit()
-	// s.service.Stop()
+	if s.service != nil {
+		s.service.Stop()
+	}
 }
 
 type SeleniumFactory struct {
@@ -63,32 +71,43 @@ func (f *SeleniumFactory) GetSelenium(key string) *SeleniumService {
 
 	service, err := newSeleniumService()
 	if err != nil {
-		klog.Infof("new selenium service error: %s", err.Error())
+		klog.Errorf("new selenium service error: %s", err.Error())
 		return nil
 	}
+	klog.Infof("selenium service created for %s", key)
 	f.browsers[key] = service
 	return service
 }
 
 func newSeleniumService() (*SeleniumService, error) {
-	// ops := []selenium.ServiceOption{}
+	if driverPath != "" {
+		needStartDriver = true
+	}
 
-	// service, err := selenium.NewChromeDriverService(chromeDriverPath, port, ops...)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	var service *selenium.Service
+	if needStartDriver {
+		ops := []selenium.ServiceOption{}
+		var err error
+		service, err = selenium.NewChromeDriverService(driverPath, port, ops...)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	wd, err := selenium.NewRemote(selenium.Capabilities{
 		"browserName": "chrome",
 	}, fmt.Sprintf("http://127.0.0.1:%d/wd/hub", port))
+
 	if err != nil {
-		// service.Stop()
+		if service != nil {
+			service.Stop()
+		}
 		return nil, err
 	}
 	stopCh := make(chan struct{})
 
 	return &SeleniumService{
-		// service:   service,
+		service:   service,
 		WebDriver: wd,
 		stopCh:    stopCh,
 	}, nil

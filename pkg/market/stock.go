@@ -7,6 +7,7 @@ import (
 	"github.com/tebeka/selenium"
 	"github.com/zbw0046/awesome-bot/pkg/browser"
 	"github.com/zbw0046/awesome-bot/pkg/number"
+	"k8s.io/klog"
 )
 
 const (
@@ -52,6 +53,7 @@ func getStockInformation(codes []string) (*stocksInfo, error) {
 		if err != nil {
 			return nil, fmt.Errorf("get stockInfo of %s(%s) error: %s", code, CodeChineseMap[code], err.Error())
 		}
+		klog.Infof("get %s success", code)
 		stocksInfo.Data[code] = info
 	}
 	return stocksInfo, nil
