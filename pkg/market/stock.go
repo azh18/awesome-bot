@@ -67,6 +67,7 @@ func getStockInformationFromXueQiu(code string) (*stockInfo, error) {
 	}
 
 	url := fmt.Sprintf(xueQiuStockUrl, code)
+	// todo: add retry
 	err := wd.WebDriver.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("fetch page %s error: %s", url, err.Error())
