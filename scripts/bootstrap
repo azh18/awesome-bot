@@ -1,0 +1,6 @@
+#!/bin/bash
+CWD=$(cd $(dirname $0); pwd)
+
+bash /opt/bin/entry_point.sh > /tmp/driver.log 2>&1 &
+sleep 5
+bash $CWD/bootstrap_faas.sh

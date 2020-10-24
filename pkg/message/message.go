@@ -8,8 +8,10 @@ import (
 )
 
 type Message struct {
-	Title   string
-	Content []*Block
+	Title    string
+	Content  []*Block
+	Links    map[string]string // text -> url
+	IsUrgent bool
 }
 
 func (m *Message) ToLarkCard() (*protocol.CardForm, error) {
@@ -22,11 +24,13 @@ func (m *Message) ToLarkCard() (*protocol.CardForm, error) {
 			Lines: lines,
 		}, builder.HrThing)
 	}
+
 	msg.AddThing(&builder.Thing{
 		Type:  builder.TextThingType,
-		Lines: []string{"[雪球行情]($xueqiu)"},
+		Lines: []string{"[雪球行情]($xueqiu)", "[华宝油气系列数据]($huabao)"},
 		URLMap: map[string]string{
 			"xueqiu": "https://xueqiu.com/S/SH000001",
+			"huabao": "https://palmmicro.com/woody/res/sz162411cn.php",
 		},
 	})
 	return msg.Build()

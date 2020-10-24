@@ -42,6 +42,10 @@ func (m *OverviewModule) Start(stop <-chan struct{}) {
 	crontab.Start()
 }
 
+func (m *OverviewModule) Run(message.Sender, string) error {
+	return m.do()
+}
+
 func (m *OverviewModule) do() error {
 	klog.Infof("trigger flush overview module")
 	title := fmt.Sprintf("当前股市概况（%s）", time.Now().Format("2006-01-02 15:04:05"))
