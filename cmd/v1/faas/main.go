@@ -7,6 +7,7 @@ import (
 
 	gr "github.com/awesome-fc/golang-runtime"
 	"github.com/zbw0046/awesome-bot/cmd/v1/options"
+	"github.com/zbw0046/awesome-bot/pkg/arbitrage"
 	"github.com/zbw0046/awesome-bot/pkg/browser"
 	"github.com/zbw0046/awesome-bot/pkg/market"
 	"github.com/zbw0046/awesome-bot/pkg/message"
@@ -62,7 +63,9 @@ func handler(ctx *gr.FCContext, event []byte) ([]byte, error) {
 	fcLogger.Infof("hello golang!")
 
 	req := TriggerRequest{}
-	resp := Response{}
+	resp := Response{
+		Result: map[string]*result{},
+	}
 	if err := json.Unmarshal(event, &req); err != nil {
 		resp.ErrMsg = err.Error()
 		fcLogger.Errorf("unmarshal request error: %s", err.Error())
@@ -88,7 +91,9 @@ func handler(ctx *gr.FCContext, event []byte) ([]byte, error) {
 
 func runModule(moduleCall *moduleCall) (subResult *result) {
 	subResult = &result{}
-
+	if moduleCall.Sender == "" {
+		moduleCall.Sender = message.SenderLark
+	}
 	sender := message.GetSender(moduleCall.Sender)
 	if sender == nil {
 		subResult.ErrMsg = fmt.Sprintf("cannot get sender: %s", moduleCall.Sender)
@@ -117,7 +122,8 @@ func main() {
 	// init lark config
 	lark.InitApp(o.LarkConfigPath)
 	moduleMap = map[string]starter.Module{
-		"overview": market.NewOverviewModule(&message.LarkSender{}),
+		"overview":  market.NewOverviewModule(&message.LarkSender{}),
+		"arbitrage": &arbitrage.Module{},
 	}
 	gr.Start(handler, nil)
 	<-stopCh
