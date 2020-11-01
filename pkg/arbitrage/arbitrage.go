@@ -14,6 +14,11 @@ func (m *Module) Start(stop <-chan struct{}) {
 }
 
 func (m *Module) Run(sender message.Sender, extra string) error {
-	Analyse162411(sender)
+	switch extra {
+	case "morning":
+		ReportRevenue(sender)
+	case "afternoon":
+		Analyse162411(sender)
+	}
 	return nil
 }

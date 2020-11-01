@@ -125,3 +125,70 @@ func Analyse162411(sender message.Sender) {
 		klog.Errorf("send message error: %s", err.Error())
 	}
 }
+
+// 分析前一天的套利结果并发消息
+func ReportRevenue(sender message.Sender) {
+	wd := browser.GetSeleniumFactory().GetSelenium(browserKey).WebDriver
+	if err := wd.Get(url162411); err != nil {
+		klog.Errorf("fetch 162411 data from %s error: %s", url162411, err.Error())
+		return
+	}
+	estimatedValueStr, err := browser.ExtractTextValue(wd, `//*[@id="estimation"]/tbody/tr[2]/td[3]/font`)
+	if err != nil {
+		klog.Errorf("get estimated value error: %s", err.Error())
+		return
+	}
+	lastLofValueStr, err := browser.ExtractTextValue(wd, `//*[@id="SZ162411fundhistory"]/tbody/tr[2]/td[2]/font`)
+	if err != nil {
+		klog.Errorf("get last LOF value error: %s", err.Error())
+		return
+	}
+	todayLofValueStr, err := browser.ExtractTextValue(wd, `//*[@id="reference"]/tbody/tr[2]/td[2]/font`)
+	if err != nil {
+		klog.Errorf("get LOF value error: %s", err.Error())
+		return
+	}
+
+	estimatedValue, todayLofValue, lastDayLofValue := number.String2Float(estimatedValueStr), number.String2Float(todayLofValueStr), number.String2Float(lastLofValueStr)
+
+	// 当日套利利润
+	revenueRatioLastDay := (lastDayLofValue - estimatedValue) / estimatedValue
+	// 隔日套利利润
+	revenueRatioIfToday := (todayLofValue - estimatedValue) / estimatedValue
+
+	basicBlock1 := message.Block{
+		Title: "162411套利利润预测（先卖出后申购）",
+		Lines: []string{
+			fmt.Sprintf("昨日XOP收盘估值：%.3f", estimatedValue),
+			fmt.Sprintf("昨日SZ162411收盘价：%.3f", lastDayLofValue),
+			fmt.Sprintf("如果昨日申购卖出，则利润率为: %.2f%%", revenueRatioLastDay*100),
+		},
+	}
+
+	basicBlock2 := message.Block{
+		Title: "162411套利利润预测（先申购第二天卖出）",
+		Lines: []string{
+			fmt.Sprintf("昨日XOP收盘估值：%.3f", estimatedValue),
+			fmt.Sprintf("目前SZ162411价格：%.3f", todayLofValue),
+			fmt.Sprintf("如果现在卖出，则利润率为: %.2f%%", revenueRatioIfToday*100),
+		},
+	}
+
+	msg := &message.Message{
+		Title: "华宝原油套利提醒",
+		Content: []*message.Block{
+			&basicBlock1, &basicBlock2,
+		},
+		Links: map[string]string{
+			"162411数据来源": url162411,
+		},
+	}
+
+	if revenueRatioIfToday > 3 {
+		msg.IsUrgent = true
+	}
+
+	if err := sender.SendMessage(msg); err != nil {
+		klog.Errorf("send message error: %s", err.Error())
+	}
+}

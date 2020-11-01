@@ -11,5 +11,11 @@ func TestArbitrage(t *testing.T) {
 	test.InitAll()
 	sender := message.GetSender(message.SenderLark)
 	module := Module{}
-	module.Run(sender, "")
+	module.Run(sender, "afternoon")
+}
+
+func TestReport162411(t *testing.T) {
+	test.InitAll()
+	sender := message.GetSender(message.SenderLark)
+	ReportRevenue(sender)
 }
