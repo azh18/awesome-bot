@@ -2,6 +2,7 @@ package market
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -77,6 +78,9 @@ func (m *OverviewModule) do() error {
 	etfBlock := &message.Block{
 		Title: "ETF概况",
 	}
+	sort.Slice(ETFCodeList, func(i, j int) bool {
+		return stocksInfo.Data[ETFCodeList[i]].RaisePct > stocksInfo.Data[ETFCodeList[j]].RaisePct
+	})
 	for _, code := range ETFCodeList {
 		etfBlock.Lines = append(etfBlock.Lines,
 			fmt.Sprintf("%s(%s): %s", CodeChineseMap[code], code, stocksInfo.Data[code]))

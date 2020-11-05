@@ -62,7 +62,7 @@ func (bd *Builder) Build() (*protocol.CardForm, error) {
 			Content: &bd.Title,
 			Lines:   &line1,
 		},
-		"",
+		"red",
 	)
 
 	builder.AddHRBlock()
@@ -77,6 +77,7 @@ func (bd *Builder) Build() (*protocol.CardForm, error) {
 
 				url := make(map[string]protocol.URLForm)
 				for k, v := range thing.URLMap {
+					v := v
 					url[k] = protocol.URLForm{
 						Url: &v,
 					}
