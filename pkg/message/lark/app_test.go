@@ -29,7 +29,7 @@ func TestApp(t *testing.T) {
 	fmt.Printf("resp=%#v\n", resp)
 	assert.Nil(t, err)
 
-	resp, cardResp, err := SendTo(context.Background(), "me", card)
+	resp, cardResp, err := SendTo(context.Background(), "me", card, true)
 	klog.Infof("resp=%#v, cardResp=%#v, err=%#v", resp, cardResp, err)
 	assert.Nil(t, err)
 	klog.Flush()

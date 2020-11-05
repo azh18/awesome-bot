@@ -68,31 +68,65 @@ type eventUser struct {
 	Text string `json:"text"`
 }
 
-func SendTo(ctx context.Context, name string, ret interface{}) (*protocol.SendMsgResponse, *protocol.SendCardMsgResponse, error) {
+func SendTo(ctx context.Context, name string, ret interface{}, withUrgent bool) (*protocol.SendMsgResponse, *protocol.SendCardMsgResponse, error) {
 	if ch, ok := chatMap[name]; !ok {
 		return nil, nil, fmt.Errorf("unknown chat name: %s in: %+v", name, chatMap)
 	} else {
-		return sendMessage(ctx, ch, "", ret)
+		return sendMessage(ctx, ch, "", ret, withUrgent)
 	}
 }
 
-func sendMessage(ctx context.Context, user *protocol.UserInfo, openMessageID string, ret interface{}) (r *protocol.SendMsgResponse, r2 *protocol.SendCardMsgResponse, err error) {
+func sendMessage(ctx context.Context, user *protocol.UserInfo, openMessageID string, ret interface{},
+	withUrgent bool) (r *protocol.SendMsgResponse, r2 *protocol.SendCardMsgResponse, err error) {
+	var messageID string
+	if user.Type != protocol.UserTypeEmail {
+		withUrgent = false
+	}
+
 	switch ret.(type) {
 	case string:
 		{
 			if openMessageID != "" {
 				r, err = message.SendTextMessage(ctx, tenantKey, larkConfig.AppID, user, openMessageID, prefixAt(ctx, ret.(string)))
+				if err == nil {
+					messageID = r.Data.MessageID
+				}
 			} else {
 				r, err = message.SendTextMessage(ctx, tenantKey, larkConfig.AppID, user, openMessageID, ret.(string))
+				if err == nil {
+					messageID = r.Data.MessageID
+				}
 			}
 		}
 	case map[protocol.Language]*protocol.RichTextForm:
 		{
 			r, err = message.SendRichTextMessage(ctx, tenantKey, larkConfig.AppID, user, openMessageID, ret.(map[protocol.Language]*protocol.RichTextForm))
+			if err == nil {
+				messageID = r.Data.MessageID
+			}
 		}
 	case *protocol.CardForm:
 		{
 			r2, err = message.SendCardMessage(ctx, tenantKey, larkConfig.AppID, user, openMessageID, *ret.(*protocol.CardForm), true)
+			if err == nil {
+				messageID = r2.Data.MessageID
+			}
+		}
+	}
+
+	if withUrgent {
+		openID, e := getOpenID(ctx, larkConfig.AppID, user.ID)
+		if e != nil {
+			return nil, nil, fmt.Errorf("get openid error: %s", e.Error())
+		}
+		if _, err := sendUrgent(ctx, larkConfig.AppID, &urgentRequest{
+			MessageID:  messageID,
+			UrgentType: urgentTypeApp,
+			OpenIds: []string{
+				openID,
+			},
+		}); err != nil {
+			return nil, nil, fmt.Errorf("urgent error: %s", err.Error())
 		}
 	}
 

@@ -11,6 +11,14 @@ type Sender interface {
 	SendMessage(message *Message) error
 }
 
+func GetSender(senderType string) Sender {
+	switch senderType {
+	case SenderLark:
+		return &LarkSender{}
+	}
+	return nil
+}
+
 type LarkSender struct {
 }
 
@@ -19,6 +27,6 @@ func (l *LarkSender) SendMessage(message *Message) error {
 	if err != nil {
 		return fmt.Errorf("ToLarkCard error: %s", err.Error())
 	}
-	_, _, err = lark.SendTo(context.Background(), "me", card)
+	_, _, err = lark.SendTo(context.Background(), "me", card, message.IsUrgent)
 	return err
 }
